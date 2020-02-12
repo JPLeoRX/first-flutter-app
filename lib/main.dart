@@ -9,6 +9,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Welcome to Flutter',
       home: RandomWords(),
+      theme: ThemeData(
+        primaryColor: Colors.white
+      ),
+
     );
   }
 }
@@ -23,6 +27,7 @@ class RandomWords extends StatefulWidget {
 class RandomWordsState extends State<RandomWords> {
   final _wordPairs = <WordPair>[];
   final _font = const TextStyle(fontSize: 18.0);
+  final Set<WordPair> _saved = Set<WordPair>();
 
   // Build list view
   ListView _buildList() {
@@ -49,16 +54,27 @@ class RandomWordsState extends State<RandomWords> {
 
   // Convert one word pair to a list row
   ListTile _buildListRowFromWordPair(WordPair pair) {
-    return _buildListRowFromString(pair.asPascalCase);
-  }
+    final bool alreadySaved = _saved.contains(pair);
 
-  // Convert text to a list row
-  ListTile _buildListRowFromString(String text) {
     return ListTile(
       title: Text(
-        text,
+        pair.asPascalCase,
         style: _font,
       ),
+
+      trailing: Icon(
+        alreadySaved ? Icons.favorite : Icons.favorite_border,
+        color: alreadySaved ? Colors.red : Colors.grey,
+      ),
+
+      onTap: () {
+        setState(() {
+          if (alreadySaved)
+            _saved.remove(pair);
+          else
+            _saved.add(pair);
+        });
+      },
     );
   }
 
@@ -72,6 +88,13 @@ class RandomWordsState extends State<RandomWords> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Random Name Infinite List"),
+
+        actions: <Widget>[
+          IconButton(
+            icon: new Icon(Icons.list),
+            onPressed: _clickSaved,
+          )
+        ],
       ),
 
       body: _buildList(),
@@ -79,5 +102,39 @@ class RandomWordsState extends State<RandomWords> {
 
     final wordPair = WordPair.random();
     return Text(wordPair.asPascalCase);
+  }
+
+  void _clickSaved() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          final Iterable<ListTile> tiles = _saved.map(
+                (WordPair pair) {
+              return ListTile(
+                title: Text(
+                  pair.asPascalCase,
+                  style: _font,
+                ),
+              );
+            },
+          );
+
+          final List<Widget> divided = ListTile.divideTiles(
+            context: context,
+            tiles: tiles
+          ).toList();
+
+          return Scaffold(
+            appBar: AppBar(
+              title: Text("Saved Words"),
+            ),
+
+            body: ListView(
+              children: divided,
+            ),
+          );
+        }
+      )
+    );
   }
 }
